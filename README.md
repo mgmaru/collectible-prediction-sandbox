@@ -45,10 +45,23 @@
 
 ```text
 .
-├── docs/assignment/   課題仕様
-└── src/               実装（これから）
+├── docs/assignment/          課題仕様
+└── src/
+    ├── generate_sample_data.py   サンプルデータ生成スクリプト (Step 1: 欠損なし)
+    └── data/                     生成済みCSVとデータ辞書 (README参照)
 ```
+
+## サンプルデータ
+
+Step 1（欠損なし・30商品・180日）のサンプルデータを生成できます。
+
+```bash
+python3 src/generate_sample_data.py
+```
+
+生成物は `src/data/`（`daily_snapshots.csv` / `items.csv` / `events.csv`）に出力されます。
+カラム定義や価格パターンは [src/data/README.md](src/data/README.md) を参照してください。
 
 ## ステータス
 
-🚧 開発準備中。詳しい仕様は [課題ドキュメント](docs/assignment/collectible_prediction_sandbox_assignment.md) を参照してください。
+🚧 開発中。サンプルデータ生成（1週目）まで完了。詳しい仕様は [課題ドキュメント](docs/assignment/collectible_prediction_sandbox_assignment.md) を参照してください。
