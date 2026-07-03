@@ -1,19 +1,20 @@
+from pathlib import Path
 from typing import cast
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from streamlit.elements.plotly_chart import PlotlyState
 
 # CSV FILE PATH
-DAILY_SNAPSHOTS_CSV_FILE_PATH = "./data_source/daily_snapshots.csv"
-EVENTS_CSV_FILE_PATH = "./data_source/events.csv"
-ITEMS_CSV_FILE_PATH = "./data_source/items.csv"
+DATA_SOURCE_DIR = Path(__file__).parent / "data_source"
+DAILY_SNAPSHOTS_CSV_FILE_PATH = DATA_SOURCE_DIR / "daily_snapshots.csv"
+EVENTS_CSV_FILE_PATH = DATA_SOURCE_DIR / "events.csv"
+ITEMS_CSV_FILE_PATH = DATA_SOURCE_DIR / "items.csv"
 
 
 # load csv and convert to dataframe
-def load_csv_data(file_path: str) -> pd.DataFrame:
-    return pd.read_csv(file_path)
+def load_csv_data(file_path: Path, parse_dates: list[str] | None = None) -> pd.DataFrame:
+    return pd.read_csv(file_path, parse_dates=parse_dates)
 
 
 # extract target item data (include index)
@@ -61,11 +62,11 @@ def make_selected_item_line_chart(
             line_color="red",
             annotation_text=event_type,  # 注釈ラベルも付けられる
         )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
-daily_snapshots_data = load_csv_data(DAILY_SNAPSHOTS_CSV_FILE_PATH)
-events_data = load_csv_data(EVENTS_CSV_FILE_PATH)
+daily_snapshots_data = load_csv_data(DAILY_SNAPSHOTS_CSV_FILE_PATH, ["date"])
+events_data = load_csv_data(EVENTS_CSV_FILE_PATH, ["date"])
 
 # frontend
 st.set_page_config(layout="wide")
