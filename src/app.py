@@ -34,8 +34,14 @@ def extract_events_for_selected_item(
 # list items
 # use seidevar select box
 def make_item_name_list(item_data: pd.DataFrame) -> list[str]:
-    items = item_data["item_name"]
-    return list(set(items))
+    sorted_item_name_list: list[str] = list(
+        item_data.drop_duplicates(subset="item_name").sort_values(
+            "item_id"
+        )[  # item_nameの重複削除 & item_idを昇順でソート
+            "item_name"
+        ]
+    )
+    return sorted_item_name_list
 
 
 def make_selected_item_line_chart(
@@ -77,27 +83,35 @@ selected_item_events_data = extract_events_for_selected_item(
     selected_item_data, events_data
 )
 
+# selected item snapshot data
+st.subheader("1. スナップショットデータ")
+st.dataframe(selected_item_data, hide_index=True)
+
+# selected item event data
+st.subheader("2. イベントデータ")
+st.dataframe(selected_item_events_data, hide_index=True)
+
 col1, col2 = st.columns(2, gap="xlarge")
 
 # line chart
 with col1:
-    st.header("現在価格（円）")
+    st.subheader("3. 現在価格（円）")
     make_selected_item_line_chart(
         "date", "price", selected_item_data, selected_item_events_data
     )
 
-    st.header("SNS言及数")
+    st.subheader("4. SNS言及数")
     make_selected_item_line_chart(
         "date", "sns_mentions", selected_item_data, selected_item_events_data
     )
 
 with col2:
-    st.header("出品数")
+    st.subheader("5. 出品数")
     make_selected_item_line_chart(
         "date", "listing_count", selected_item_data, selected_item_events_data
     )
 
-    st.header("検索関心")
+    st.subheader("6. 検索関心")
     make_selected_item_line_chart(
         "date", "trends_score", selected_item_data, selected_item_events_data
     )
