@@ -45,6 +45,7 @@ def make_selected_item_line_chart(
     selected_item_events_data: pd.DataFrame,
 ) -> None:
     fig = px.line(selected_item_data, x=horintal_axis_data, y=vertical_axis_data)
+    fig.update_xaxes(tickformat="%Y/%m/%d")
     for _, event in selected_item_events_data.iterrows():
         event_date = cast(pd.Timestamp, event["date"])
         event_type = cast(str, event["event_type"])
@@ -61,10 +62,12 @@ daily_snapshots_data = load_csv_data(DAILY_SNAPSHOTS_CSV_FILE_PATH)
 events_data = load_csv_data(EVENTS_CSV_FILE_PATH)
 
 # frontend
+st.set_page_config(layout="wide")
+
 st.title("collectible-prediction-demo")
 
 selected_item = st.sidebar.selectbox(
-    "ITEM",
+    "ITEMS",
     make_item_name_list(daily_snapshots_data),
 )
 
@@ -74,8 +77,9 @@ selected_item_events_data = extract_events_for_selected_item(
     selected_item_data, events_data
 )
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns(2, gap="xlarge")
 
+# line chart
 with col1:
     st.header("現在価格（円）")
     make_selected_item_line_chart(
