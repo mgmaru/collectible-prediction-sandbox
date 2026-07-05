@@ -66,13 +66,13 @@ uv run streamlit run src/app.py
 このコマンドはプロジェクト直下から実行するため、`./data_source/...` は次の場所を探します。
 
 ```text
-collectible-prediction-sandbox/data_source/daily_snapshots.csv
+ml-model-tuning-sandbox/data_source/daily_snapshots.csv
 ```
 
 しかし実際のCSVはここにあります。
 
 ```text
-collectible-prediction-sandbox/src/data_source/daily_snapshots.csv
+ml-model-tuning-sandbox/src/data_source/daily_snapshots.csv
 ```
 
 そのため、実行ディレクトリによっては `FileNotFoundError` になります。

@@ -1,4 +1,4 @@
-# collectible-prediction-sandbox
+# ml-model-tuning-sandbox
 
 機械学習の予測モデル構築を学ぶための小さな練習用リポジトリです。
 

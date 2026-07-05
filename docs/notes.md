@@ -1,7 +1,7 @@
 # notes
 
 ## ドキュメント概要
-`collectible-prediction-sandbox`の開発における反省(やったこと、わかったこと、疑問点など)を記載する。
+`ml-model-tuning-sandbox`の開発における反省(やったこと、わかったこと、疑問点など)を記載する。
 
 ## 反省
 ### 2026-07-01
