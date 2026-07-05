@@ -62,22 +62,24 @@
 
 ```text
 .
-├── docs/assignment/          課題仕様
+├── archive/
+│   └── legacy_collectible_src/  旧コレクタブル課題の実装
+├── data/raw/bike_sharing/       Bike Sharing Dataset
+├── docs/assignment/             課題仕様
 └── src/
-    ├── generate_sample_data.py   サンプルデータ生成スクリプト (Step 1: 欠損なし)
-    └── data/                     生成済みCSVとデータ辞書 (README参照)
+    └── README.md                新しい主課題用の実装ディレクトリ
 ```
 
 ## サンプルデータ
 
-Step 1（欠損なし・30商品・180日）のサンプルデータを生成できます。
+旧コレクタブル課題の Step 1（欠損なし・30商品・180日）のサンプルデータは、アーカイブした実装から生成できます。
 
 ```bash
-python3 src/generate_sample_data.py
+python3 archive/legacy_collectible_src/generate_sample_data.py
 ```
 
-生成物は `src/data/`（`daily_snapshots.csv` / `items.csv` / `events.csv`）に出力されます。
-カラム定義や価格パターンは [src/data/README.md](src/data/README.md) を参照してください。
+生成物は `archive/legacy_collectible_src/data/`（`daily_snapshots.csv` / `items.csv` / `events.csv`）に出力されます。
+既存の旧サンプルCSVは `archive/legacy_collectible_src/data_source/` に残しています。
 
 ## ステータス
 
