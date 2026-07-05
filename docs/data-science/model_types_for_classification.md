@@ -595,14 +595,35 @@ LightGBM / XGBoost
 flowchart TD
     A["特徴量を作る"] --> B["ラベルを作る"]
     B --> C["時系列でtrain/test分割"]
-    C --> D["ロジスティック回帰"]
-    D --> E["評価指標を見る"]
-    E --> F["予測確率とグラフを比較"]
-    F --> G["決定木を試す"]
-    G --> H["Random Forestを試す"]
-    H --> I["Gradient Boostingを試す"]
-    I --> J["発展: LightGBM / XGBoost"]
+    C --> D["ロジスティック回帰を学習"]
+    D --> E["テスト期間で予測"]
+    E --> F["評価指標を見る"]
+    F --> G["予測確率とグラフを比較"]
+    G --> H["決定木を学習"]
+    H --> I["同じテスト期間で評価"]
+    I --> J["Random Forestを学習"]
+    J --> K["同じテスト期間で評価"]
+    K --> L["Gradient Boostingを学習"]
+    L --> M["同じテスト期間で評価"]
+    M --> N["発展: LightGBM / XGBoost"]
 ```
+
+重要なのは、**モデルを1つ試すたびに評価する**こと。
+
+```text
+モデルを学習する
+↓
+テスト期間に対して予測する
+↓
+評価指標を見る
+↓
+予測確率とグラフを比べる
+↓
+次のモデルを試す
+```
+
+評価は最後にまとめて1回だけやるものではない。
+モデルを変えたら、その都度同じ評価方法で比較する。
 
 ### 1. ロジスティック回帰
 
@@ -613,6 +634,7 @@ flowchart TD
 - モデル学習の流れを理解する
 - 予測確率を出す
 - 特徴量の係数を見る
+- 最初の評価基準を作る
 
 ### 2. 決定木
 
@@ -622,6 +644,7 @@ flowchart TD
 
 - 条件分岐としてモデルを理解する
 - どの条件で上がりやすいか見る
+- ロジスティック回帰と同じ指標で比較する
 
 ### 3. Random Forest
 
@@ -631,6 +654,7 @@ flowchart TD
 
 - 単体の決定木より安定した予測を見る
 - feature importanceを見る
+- 決定木より評価が安定するか確認する
 
 ### 4. Gradient Boosting
 
@@ -639,6 +663,7 @@ flowchart TD
 目的:
 
 - 木系モデルで精度がどれくらい上がるか見る
+- precision / recall のバランスが改善するか見る
 
 ### 5. LightGBM / XGBoost
 
@@ -647,6 +672,116 @@ flowchart TD
 目的:
 
 - 実務でよく使われる表データ向けモデルを体験する
+- 既存モデルと同じ評価条件で比較する
+
+## 評価はどこでやるか
+
+評価は、**train/test分割の後、各モデルで予測を出した直後**に行う。
+
+scikit-learn公式ドキュメントでは、`metrics` モジュールは分類性能を測るための関数群を提供している。
+また、cross-validationはモデルがどれくらい汎化するかを見積もる方法として説明されている。
+
+今回の課題では、時系列データを扱うため、まずは次の形にする。
+
+```text
+過去期間 = train
+未来期間 = test
+```
+
+そして、モデルごとに以下を繰り返す。
+
+```mermaid
+flowchart LR
+    A["trainで学習"] --> B["testで予測"]
+    B --> C["評価指標を計算"]
+    C --> D["評価結果を記録"]
+    D --> E["グラフで外れ例を確認"]
+```
+
+### 評価のタイミング
+
+| タイミング | やること | 目的 |
+|---|---|---|
+| 特徴量作成後 | 欠損や未来情報混入を確認 | 評価以前の前提確認 |
+| train/test分割後 | 期間が正しく分かれているか確認 | 未来で評価するため |
+| 各モデル学習後 | testに対して予測する | 未知データへの予測を見る |
+| 予測後 | accuracy, precision, recallなどを計算 | モデル性能を比較する |
+| 評価後 | 外れた商品をグラフで確認 | なぜ外れたか学ぶ |
+
+### モデル比較時の評価単位
+
+モデルを比較するときは、必ず同じ条件で評価する。
+
+| 揃えるもの | 理由 |
+|---|---|
+| 同じ特徴量 | モデル差を見たいから |
+| 同じラベル | 予測対象を揃えるため |
+| 同じtrain/test期間 | 評価対象を揃えるため |
+| 同じ評価指標 | 数字を比較できるようにするため |
+
+たとえば、以下のように比較する。
+
+| モデル | accuracy | precision | recall | ROC-AUC | メモ |
+|---|---:|---:|---:|---:|---|
+| ロジスティック回帰 |  |  |  |  | 基準モデル |
+| 決定木 |  |  |  |  | 条件分岐を確認 |
+| Random Forest |  |  |  |  | 木を多数使う |
+| Gradient Boosting |  |  |  |  | 精度改善を確認 |
+
+### 今回の評価で特に見るもの
+
+今回の予測は、
+
+```text
+30日後に +30%以上 上がる候補を見つける
+```
+
+ことが目的。
+
+そのため、特に `precision` が重要。
+
+```text
+上がると予測した商品のうち、
+本当に上がった割合
+```
+
+ただし、precisionだけを見ると、ほとんど候補を出さないモデルが有利になることがある。
+そのため、`recall` も一緒に見る。
+
+```text
+実際に上がった商品のうち、
+どれくらい拾えたか
+```
+
+### ハイパーパラメータ調整時の評価
+
+ハイパーパラメータを調整するときも、評価は必ず必要。
+
+```text
+設定Aで学習
+↓
+testまたはvalidationで評価
+
+設定Bで学習
+↓
+同じtestまたはvalidationで評価
+
+数字を比較
+```
+
+ただし、テストデータを見ながら何度も調整すると、テストデータに合わせすぎる。
+
+理想的には、
+
+```text
+train      = 学習用
+validation = ハイパーパラメータ調整用
+test       = 最後の確認用
+```
+
+に分ける。
+
+今回の初期段階では、まずはシンプルに時系列のtrain/test分割で評価し、慣れてきたらvalidation期間を分ける。
 
 ## モデル別の設計ポイントと調整パラメータ
 
@@ -1233,16 +1368,16 @@ MLPは特徴量スケールの影響を受けやすい。
 - scikit-learn MLPClassifier: https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html
 - scikit-learn Neural network models: https://scikit-learn.org/stable/modules/neural_networks_supervised.html
 
-## 今回のパラメータ調整のおすすめ順
+## 今回のハイパーパラメータ調整のおすすめ順
 
-今回の課題では、パラメータ調整も段階的に行う。
+今回の課題では、ハイパーパラメータ調整も段階的に行う。
 
 ```mermaid
 flowchart TD
     A["デフォルトで動かす"] --> B["評価指標を見る"]
     B --> C["過学習しているか確認"]
-    C --> D["重要パラメータだけ調整"]
-    D --> E["同じ時系列分割で比較"]
+    C --> D["重要ハイパーパラメータだけ調整"]
+    D --> E["同じ時系列分割で評価・比較"]
     E --> F["グラフで外れ例を確認"]
 ```
 
@@ -1451,6 +1586,9 @@ LightGBM / XGBoost
 
 - scikit-learn Supervised Learning: https://scikit-learn.org/stable/supervised_learning.html
 - scikit-learn User Guide: https://scikit-learn.org/stable/user_guide.html
+- scikit-learn Model evaluation: https://scikit-learn.org/stable/modules/model_evaluation.html
+- scikit-learn Cross-validation: https://scikit-learn.org/stable/modules/cross_validation.html
+- scikit-learn metrics API: https://scikit-learn.org/stable/api/sklearn.metrics.html
 - scikit-learn LogisticRegression: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
 - scikit-learn Decision Trees: https://scikit-learn.org/stable/modules/tree.html
 - scikit-learn RandomForestClassifier: https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
