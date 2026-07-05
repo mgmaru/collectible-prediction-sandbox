@@ -1,12 +1,29 @@
 # collectible-prediction-sandbox
 
-コレクタブル商品の**価格予測モデルを学ぶための小さな練習用アプリ**です。
+機械学習の予測モデル構築を学ぶための小さな練習用リポジトリです。
 
-架空のサンプルデータを使って「30日後に価格が +30% 以上上がるか」を予測する流れを一通り体験し、予測モデル構築の基本（データ → 特徴量 → ラベル → 学習 → 予測 → 評価 → 可視化）を理解することを目的にしています。
+当初は、架空のコレクタブル商品データを使って「30日後に価格が +30% 以上上がるか」を予測する流れを学ぶ構成でした。
+現在は、短期間でモデル評価と改善プロセスを学ぶため、正解データ付きの実データを使う課題を主課題にしています。
 
 > 本番アプリ `Collectible Value Radar` の縮小版という位置づけです。高精度なモデルを作ることが目的ではなく、モデル構築の流れを理解することが目的です。
 
+## 学習方針の更新
+
+短期間で機械学習の理解を深めるため、主課題は正解データ付きの実データを使う **Bike Sharing Demand Model Tuning Sandbox** に移行します。
+
+- 新しい主課題: [docs/assignment/bike_sharing_model_tuning_assignment.md](docs/assignment/bike_sharing_model_tuning_assignment.md)
+- 既存のコレクタブル課題: ML全体の流れを理解する Phase 0 として残す
+- 使用データ: UCI Bike Sharing Dataset (`data/raw/bike_sharing/hour.csv`)
+
 ## 目的
+
+- 実データを使って、予測モデルの性能を評価する
+- ベースライン、特徴量追加、モデル変更によるスコア変化を確認する
+- MAE, RMSE, R2 などの回帰評価指標を理解する
+- 誤差分析により、モデルが苦手な条件を探す
+- Streamlitで、モデル改善の試行錯誤を可視化する
+
+既存のコレクタブル商品データ課題では、以下を Phase 0 として学びます。
 
 - サンプルデータを作り、履歴データ（価格・SNS・検索量・出品数・イベント）を扱う
 - 特徴量（7日/30日変化率、イベントまでの日数など）を作る
@@ -28,18 +45,18 @@
 ## 全体の流れ
 
 ```text
-サンプルデータ作成 → CSV読み込み → グラフ確認 → 特徴量作成 → ラベル作成
-→ train/test分割 → モデル学習 → 予測・評価 → 簡易アプリで表示
+実データ読み込み → EDA → ベースライン作成 → 特徴量作成
+→ train/test分割 → モデル学習 → 評価 → 誤差分析 → Streamlitで表示
 ```
 
 ## 進め方（4週間）
 
 | 週 | 目標 |
 |---:|---|
-| 1週目 | データを作って可視化する |
-| 2週目 | 特徴量とラベルを作る |
-| 3週目 | モデルを学習・評価する |
-| 4週目 | 簡易アプリ化・欠損ありデータ対応 |
+| 1週目 | Bike Sharingデータを読み、EDAとベースラインを作る |
+| 2週目 | 特徴量を追加し、評価指標の変化を見る |
+| 3週目 | 複数モデルを比較し、誤差分析をする |
+| 4週目 | Streamlitで実験条件・評価・改善履歴を表示する |
 
 ## ディレクトリ構成
 
@@ -64,4 +81,8 @@ python3 src/generate_sample_data.py
 
 ## ステータス
 
-🚧 開発中。サンプルデータ生成（1週目）まで完了。詳しい仕様は [課題ドキュメント](docs/assignment/collectible_prediction_sandbox_assignment.md) を参照してください。
+開発中。
+
+- 新しい主課題仕様: [docs/assignment/bike_sharing_model_tuning_assignment.md](docs/assignment/bike_sharing_model_tuning_assignment.md)
+- 既存の導入課題仕様: [docs/assignment/collectible_prediction_sandbox_assignment.md](docs/assignment/collectible_prediction_sandbox_assignment.md)
+- 取得済み実データ: `data/raw/bike_sharing/hour.csv`
