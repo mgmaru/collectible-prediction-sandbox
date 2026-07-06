@@ -46,3 +46,25 @@ def extract_selected_item_data(
   return items_data[items_data["item_name"] == selected_item]
 ```
 ---
+### 2026-07-05
+#### やったこと
+- サンプルデータを架空のデータから実データに置き換え（bike_sharingへ）
+- csvを読み込んで、
+#### わかったこと
+- `hour.csv`などの時間ごとのデータを時系列で表すときは、横軸は時間まで直したものにする。
+  - 修正前：`dteday`（`2011-01-01`）
+  - 修正後：`dteday` + `hr` （`2011-01-01 05:00:00`）
+実装例：
+```python
+data["datetime"] = (
+    pd.to_datetime(data["dteday"])
+    + pd.to_timedelta(data["hr"], unit="h")
+)
+```
+- `pandas`のデータフレームにおいて条件で行抽出を行うとき、`and`は使えない。
+  - エラー：`data[data["dteday"] >= start_date and data["dteday"] <= end_date]`
+  - 正しい：`data[(data["dteday"] >= start_date) & (data["dteday"] <= end_date)]`
+- データフレームの時刻については、**日付型に変換（`pd.to_datetime()`を使用）して、条件比較などを行う。**
+  - 良くない：`data[data["dteday"] >= start_date and data["dteday"] <= end_date]`
+  - 正しい：`data[(data["dteday"] >= pd.to_datetime(start_date)) & (data["dteday"] <= pd.to_datetime(end_date))]`
+---
