@@ -5,7 +5,6 @@ from typing import cast
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from numpy._core.umath import fabs
 
 # CSV FILE PATH
 DATA_SOURCE_DIR = Path(__file__).parent.parent / "data/raw/bike_sharing"
@@ -111,10 +110,10 @@ def display_basic_stat(basic_stat: dict[str, float]) -> str:
 
 
 # create chart
-def create_contents(text: str):
+def create_contents(text: str) -> None:
     st.markdown(
         text,
-        unsafe_allow_html=True,
+        unsafe_allow_html=True,  # html active
     )
 
 
@@ -134,12 +133,16 @@ def create_bar_chart(
     st.plotly_chart(fig, width="stretch")
 
 
-def create_histgram_chart(
-    df: pd.DataFrame, horintal_axis_data: str, vertical_axis_data: str
-) -> None:
-    fig = px.histogram(df, x=horintal_axis_data, y=vertical_axis_data)
+def create_histgram_chart(df: pd.DataFrame, horintal_axis_data: str) -> None:
+    fig = px.histogram(df, x=horintal_axis_data)
     fig.update_xaxes(tickformat="%Y/%m")
     st.plotly_chart(fig, width="stretch")
+
+
+def create_heatmap_chart(df: pd.DataFrame) -> None:
+    fig = px.density_heatmap(df, x=df["weekday"], y=df["hr"], z=df["cnt"])
+    st.plotly_chart(fig, width="stretch")
+    return
 
 
 # 実行
@@ -174,16 +177,22 @@ st.subheader("1.3 cnt推移")
 create_line_chart(day_data, "dteday", "cnt")
 
 st.header("2. データ理解")
-st.subheader("2.1 基本統計量（hour.csv）")
+st.subheader("2.1-1 基本統計量（hour.csv）")
 create_contents(text_basic_stat_hour_data)
 
-st.subheader("2.2 基本統計量（day.csv）")
+st.subheader("2.1-2 基本統計量（day.csv）")
 create_contents(text_basic_stat_day_data)
 
-st.subheader("2.2 cnt分布")
+st.subheader("2.2-1 cnt分布（hour.csv）")
+create_histgram_chart(hour_data, "cnt")
+st.subheader("2.2-2 cnt分布（day.csv）")
+create_histgram_chart(day_data, "cnt")
 
 st.subheader("2.3 月毎の平均cnt")
 create_bar_chart(monthly_cnt_avg, "datetime", "cnt")
 
 st.subheader("2.4 時間帯ごとの平均cnt")
 create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
+
+st.subheader("2.5 曜日×時間帯ヒートマップ")
+create_heatmap_chart(hour_data)
