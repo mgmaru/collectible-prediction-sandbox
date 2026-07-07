@@ -1,11 +1,11 @@
+import statistics
 from pathlib import Path
 from typing import cast
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from typing_extensions import Any
+from numpy._core.umath import fabs
 
 # CSV FILE PATH
 DATA_SOURCE_DIR = Path(__file__).parent.parent / "data/raw/bike_sharing"
@@ -61,6 +61,39 @@ def calc_cnt_average_each_month_for_the_period(
             .reset_index()
         )  # 平均を算出
         return monthly_avg_cnt
+
+
+def calc_cnt_average_each_time_for_the_period(
+    df: pd.DataFrame, start_date: str, end_date: str
+):
+    if "hr" not in df.columns:  # error
+        print("The dataframe does not contain a column named hr.")
+        return pd.DataFrame()
+    else:
+        df_for_the_period = df[  # 期間内の行を抽出
+            (df["dteday"] >= pd.to_datetime(start_date))
+            & (df["dteday"] <= pd.to_datetime(end_date))
+        ]
+        # 時間帯ごとのcntを抽出
+        time_and_cnt_dict: dict[int, list[int]] = {}  # キー：hr 値：cntのリスト
+        for _, row in df_for_the_period.iterrows():
+            key = cast(int, row["hr"])
+            value = cast(int, row["cnt"])
+            if key not in time_and_cnt_dict:
+                time_and_cnt_dict[
+                    key
+                ] = []  # キーがない場合、空のリストを作ってからappend
+            time_and_cnt_dict[key].append(value)  # Pythonのmapのキーの順序は保証される
+        # 時間帯ごとの平均cntを計算
+        time_and_cnt_avg_dict: dict[int, list[float]] = {}
+        for key, value in time_and_cnt_dict.items():
+            if key not in time_and_cnt_avg_dict:
+                time_and_cnt_avg_dict[key] = []
+            time_and_cnt_avg_dict[key].append(statistics.mean(value))
+        # convert dict to DataFrame (key to column, value to row)
+        df_time_and_cnt_avg = pd.DataFrame(time_and_cnt_avg_dict).T.reset_index()
+        df_time_and_cnt_avg.columns = ["time_zone", "cnt_avg"]
+    return df_time_and_cnt_avg
 
 
 def calc_basic_stat(df: pd.DataFrame) -> dict[str, float]:
@@ -122,7 +155,9 @@ text_basic_stat_day_data = display_basic_stat(dict_basic_stat_day_data)
 monthly_cnt_avg = calc_cnt_average_each_month_for_the_period(
     hour_data, "2011-01-01", "2012-12-31"
 )
-
+time_and_cnt_avg = calc_cnt_average_each_time_for_the_period(
+    hour_data, "2011-01-01", "2012-12-31"
+)
 
 # frontend
 st.set_page_config(layout="wide")
@@ -146,5 +181,9 @@ st.subheader("2.2 基本統計量（day.csv）")
 create_contents(text_basic_stat_day_data)
 
 st.subheader("2.2 cnt分布")
+
 st.subheader("2.3 月毎の平均cnt")
 create_bar_chart(monthly_cnt_avg, "datetime", "cnt")
+
+st.subheader("2.4 時間帯ごとの平均cnt")
+create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
