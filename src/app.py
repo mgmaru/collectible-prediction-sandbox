@@ -65,14 +65,10 @@ def calc_cnt_average_each_month_for_the_period(
 
 def calc_basic_stat(df: pd.DataFrame) -> dict[str, float]:
     basic_statistics: dict[str, float] = {}
-    avg_cnt = cast(float, df.mean()["cnt"])
-    max_cnt = cast(float, df.max()["cnt"])
-    min_cnt = cast(float, df.min()["cnt"])
-    med_cnt = cast(float, df.median()["cnt"])
-    basic_statistics["avg"] = avg_cnt
-    basic_statistics["max"] = max_cnt
-    basic_statistics["min"] = min_cnt
-    basic_statistics["med"] = med_cnt
+    basic_statistics["avg"] = df["cnt"].mean()
+    basic_statistics["max"] = cast(float, df["cnt"].max())
+    basic_statistics["min"] = cast(float, df["cnt"].min())
+    basic_statistics["med"] = df["cnt"].median()
     return basic_statistics
 
 
