@@ -95,6 +95,35 @@ def calc_cnt_average_each_time_for_the_period(
     return df_time_and_cnt_avg
 
 
+# Calculate the CNT average for a specific day of the week and time.
+# whole period
+# x= weekday / y=time_zone / z= cnt_avg
+# The implementation method is map of map
+def calc_cnt_avg_for_day_of_week_and_time(df: pd.DataFrame) -> pd.DataFrame:
+    if "hr" not in df.columns:
+        print("The dataframe does not contain a column named hr.")
+        return pd.DataFrame()
+
+    weekday_time_cnt_dict: dict[int, dict[int, list[int]]] = {}
+    for _, row in df.iterrows():
+        inner_key = cast(int, row["hr"])
+        inner_value = cast(int, row["cnt"])
+        outer_key = cast(int, row["weekday"])
+        if inner_key in weekday_time_cnt_dict[outer_key]:
+            weekday_time_cnt_dict[outer_key][inner_key] = []
+        weekday_time_cnt_dict[outer_key][inner_key].append(inner_value)
+
+    # 曜日×時間帯におけるcnt平均を計算する
+    weekday_time_avg_cnt_dict: dict[int, dict[int, float]] = {}
+    for weekday, dict_time_cnt in weekday_time_cnt_dict.items():
+        for hr, cnts in dict_time_cnt.items():
+            weekday_time_avg_cnt_dict[weekday][hr] = statistics.mean(cnts)
+
+    df_weekday_time_cnt_avg = pd.DataFrame(weekday_time_avg_cnt_dict)
+
+    return df_weekday_time_cnt_avg
+
+
 def calc_basic_stat(df: pd.DataFrame) -> dict[str, float]:
     basic_statistics: dict[str, float] = {}
     basic_statistics["avg"] = df["cnt"].mean()
@@ -161,6 +190,7 @@ monthly_cnt_avg = calc_cnt_average_each_month_for_the_period(
 time_and_cnt_avg = calc_cnt_average_each_time_for_the_period(
     hour_data, "2011-01-01", "2012-12-31"
 )
+df_weekday_time_cnt_avg = calc_cnt_avg_for_day_of_week_and_time(hour_data)
 
 # frontend
 st.set_page_config(layout="wide")
