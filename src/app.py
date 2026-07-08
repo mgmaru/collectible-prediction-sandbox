@@ -196,7 +196,13 @@ def create_heatmap_chart(df: pd.DataFrame) -> None:
         hovertemplate="曜日: %{x}<br>時間: %{y}<br>cnt平均値: %{z}<extra></extra>"
     )
     st.plotly_chart(fig, width="stretch")
-    return
+
+
+def create_scatter_chart(
+    df: pd.DataFrame, horizontal_axis_data: str, vertical_axis_data: str
+) -> None:
+    fig = px.scatter(df, x=horizontal_axis_data, y=vertical_axis_data)
+    st.plotly_chart(fig, width="stretch")
 
 
 # 実行
@@ -249,5 +255,14 @@ create_bar_chart(monthly_cnt_avg, "datetime", "cnt")
 st.subheader("2.4 時間帯ごとの平均cnt")
 create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
 
-st.subheader("2.5 曜日×時間帯ヒートマップ")
+st.subheader("2.5 曜日×時間帯")
 create_heatmap_chart(df_weekday_time_cnt_avg)
+
+st.subheader("2.6 気温×cnt")
+create_scatter_chart(day_data, "temp", "cnt")
+
+st.subheader("2.7 体感温度×cnt")
+create_scatter_chart(day_data, "atemp", "cnt")
+
+st.subheader("2.8 風速×cnt")
+create_scatter_chart(day_data, "windspeed", "cnt")
