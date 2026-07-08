@@ -257,50 +257,64 @@ df_weathersit_cnt_avg = calc_cnt_avg_diff_weather_cond(hour_data)
 
 # frontend
 st.set_page_config(layout="wide")
-
 st.header("1. 生データ")
 
-st.subheader("1.1 hour.csv（時間ごとのデータ）")
-st.dataframe(hour_data, hide_index=True)
+col1, col2 = st.columns(2)
 
-st.subheader("1.2 day.csv（日にちごとのデータ）")
-st.dataframe(day_data, hide_index=True)
+with col1:
+    st.subheader("1.1 hour.csv（時間ごとのデータ）")
+    st.dataframe(hour_data, hide_index=True)
+
+with col2:
+    st.subheader("1.2 day.csv（日にちごとのデータ）")
+    st.dataframe(day_data, hide_index=True)
 
 st.subheader("1.3 cnt推移")
 create_line_chart(day_data, "dteday", "cnt")
 
+
 st.header("2. データ理解")
-st.subheader("2.1-1 基本統計量（hour.csv）")
-create_contents(text_basic_stat_hour_data)
+col3, col4 = st.columns(2)
 
-st.subheader("2.1-2 基本統計量（day.csv）")
-create_contents(text_basic_stat_day_data)
+with col3:
+    st.subheader("2.1-1 基本統計量（hour.csv）")
+    create_contents(text_basic_stat_hour_data)
 
-st.subheader("2.2-1 cnt分布（hour.csv）")
-create_histgram_chart(hour_data, "cnt")
-st.subheader("2.2-2 cnt分布（day.csv）")
-create_histgram_chart(day_data, "cnt")
+    st.subheader("2.2-1 cnt分布（hour.csv）")
+    create_histgram_chart(hour_data, "cnt")
 
-st.subheader("2.3 月毎の平均cnt")
-create_bar_chart(monthly_cnt_avg, "datetime", "cnt")
+    st.subheader("2.3 時間帯ごとの平均cnt")
+    create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
 
-st.subheader("2.4 時間帯ごとの平均cnt")
-create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
+with col4:
+    st.subheader("2.1-2 基本統計量（day.csv）")
+    create_contents(text_basic_stat_day_data)
+
+    st.subheader("2.2-2 cnt分布（day.csv）")
+    create_histgram_chart(day_data, "cnt")
+
+    st.subheader("2.4 月毎の平均cnt")
+    create_bar_chart(monthly_cnt_avg, "datetime", "cnt")
+
 
 st.subheader("2.5 曜日×時間帯(全期間)")
 create_heatmap_chart(df_weekday_time_cnt_avg)
 
-st.subheader("2.6 気温×cnt（全期間）")
-create_scatter_chart(day_data, "temp", "cnt")
+col5, col6 = st.columns(2)
 
-st.subheader("2.7 体感温度×cnt（全期間）")
-create_scatter_chart(day_data, "atemp", "cnt")
+with col5:
+    st.subheader("2.6 気温×cnt（全期間）")
+    create_scatter_chart(day_data, "temp", "cnt")
 
-st.subheader("2.8 湿度×cnt（全期間）")
-create_scatter_chart(day_data, "hum", "cnt")
+    st.subheader("2.8 湿度×cnt（全期間）")
+    create_scatter_chart(day_data, "hum", "cnt")
 
-st.subheader("2.9 風速×cnt（全期間）")
-create_scatter_chart(day_data, "windspeed", "cnt")
+with col6:
+    st.subheader("2.7 体感温度×cnt（全期間）")
+    create_scatter_chart(day_data, "atemp", "cnt")
+
+    st.subheader("2.9 風速×cnt（全期間）")
+    create_scatter_chart(day_data, "windspeed", "cnt")
 
 st.subheader("2.10 天気別×平均cnt（全期間）")
 create_bar_chart(df_weathersit_cnt_avg, "weathersit", "cnt_avg")
