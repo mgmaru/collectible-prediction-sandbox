@@ -143,6 +143,35 @@ def calc_cnt_avg_for_day_of_week_and_time(df: pd.DataFrame) -> pd.DataFrame:
     return df_weekday_time_cnt_avg
 
 
+def calc_cnt_avg_diff_weather_cond(df: pd.DataFrame):
+    if "hr" not in df.columns:  # error
+        print("The dataframe does not contain a column named hr.")
+        return pd.DataFrame()
+    else:
+        # 時間帯ごとのcntを抽出
+        weathersit_and_cnt_dict: dict[
+            int, list[int]
+        ] = {}  # キー：weathersit 値：cntのリスト
+        for _, row in df.iterrows():
+            key = cast(int, row["weathersit"])
+            value = cast(int, row["cnt"])
+            if key not in weathersit_and_cnt_dict:
+                weathersit_and_cnt_dict[key] = []
+            weathersit_and_cnt_dict[key].append(value)
+        # 天気ごとの平均cntを計算
+        weathersit_and_cnt_avg_dict: dict[int, list[float]] = {}
+        for key, value in weathersit_and_cnt_dict.items():
+            if key not in weathersit_and_cnt_avg_dict:
+                weathersit_and_cnt_avg_dict[key] = []
+            weathersit_and_cnt_avg_dict[key].append(statistics.mean(value))
+        # convert dict to DataFrame (key to column, value to row)
+        df_weathersit_cnt_avg = pd.DataFrame(
+            weathersit_and_cnt_avg_dict
+        ).T.reset_index()
+        df_weathersit_cnt_avg.columns = ["weathersit", "cnt_avg"]
+    return df_weathersit_cnt_avg
+
+
 def calc_basic_stat(df: pd.DataFrame) -> dict[str, float]:
     basic_statistics: dict[str, float] = {}
     basic_statistics["avg"] = df["cnt"].mean()
@@ -221,7 +250,10 @@ monthly_cnt_avg = calc_cnt_average_each_month_for_the_period(
 time_and_cnt_avg = calc_cnt_average_each_time_for_the_period(
     hour_data, "2011-01-01", "2012-12-31"
 )
+
 df_weekday_time_cnt_avg = calc_cnt_avg_for_day_of_week_and_time(hour_data)
+
+df_weathersit_cnt_avg = calc_cnt_avg_diff_weather_cond(hour_data)
 
 # frontend
 st.set_page_config(layout="wide")
@@ -255,20 +287,20 @@ create_bar_chart(monthly_cnt_avg, "datetime", "cnt")
 st.subheader("2.4 時間帯ごとの平均cnt")
 create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
 
-st.subheader("2.5 曜日×時間帯")
+st.subheader("2.5 曜日×時間帯(全期間)")
 create_heatmap_chart(df_weekday_time_cnt_avg)
 
-st.subheader("2.6 気温×cnt")
+st.subheader("2.6 気温×cnt（全期間）")
 create_scatter_chart(day_data, "temp", "cnt")
 
-st.subheader("2.7 体感温度×cnt")
+st.subheader("2.7 体感温度×cnt（全期間）")
 create_scatter_chart(day_data, "atemp", "cnt")
 
-st.subheader("2.8 湿度×cnt")
+st.subheader("2.8 湿度×cnt（全期間）")
 create_scatter_chart(day_data, "hum", "cnt")
 
-st.subheader("2.9 風速×cnt")
+st.subheader("2.9 風速×cnt（全期間）")
 create_scatter_chart(day_data, "windspeed", "cnt")
 
-st.subheader("2.10 天気別cnt")
-# The plan is to implement this as a bar graph with weather on the horizontal axis and CNT on the vertical axis.
+st.subheader("2.10 天気別×平均cnt（全期間）")
+create_bar_chart(df_weathersit_cnt_avg, "weathersit", "cnt_avg")
