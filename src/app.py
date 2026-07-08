@@ -264,5 +264,11 @@ create_scatter_chart(day_data, "temp", "cnt")
 st.subheader("2.7 体感温度×cnt")
 create_scatter_chart(day_data, "atemp", "cnt")
 
-st.subheader("2.8 風速×cnt")
+st.subheader("2.8 湿度×cnt")
+create_scatter_chart(day_data, "hum", "cnt")
+
+st.subheader("2.9 風速×cnt")
 create_scatter_chart(day_data, "windspeed", "cnt")
+
+st.subheader("2.10 天気別cnt")
+# The plan is to implement this as a bar graph with weather on the horizontal axis and CNT on the vertical axis.
