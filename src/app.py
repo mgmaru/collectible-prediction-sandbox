@@ -109,18 +109,37 @@ def calc_cnt_avg_for_day_of_week_and_time(df: pd.DataFrame) -> pd.DataFrame:
         inner_key = cast(int, row["hr"])
         inner_value = cast(int, row["cnt"])
         outer_key = cast(int, row["weekday"])
-        if inner_key in weekday_time_cnt_dict[outer_key]:
+        if outer_key not in weekday_time_cnt_dict:
+            weekday_time_cnt_dict[outer_key] = {}
+        if inner_key not in weekday_time_cnt_dict[outer_key]:
             weekday_time_cnt_dict[outer_key][inner_key] = []
         weekday_time_cnt_dict[outer_key][inner_key].append(inner_value)
 
     # 曜日×時間帯におけるcnt平均を計算する
-    weekday_time_avg_cnt_dict: dict[int, dict[int, float]] = {}
-    for weekday, dict_time_cnt in weekday_time_cnt_dict.items():
-        for hr, cnts in dict_time_cnt.items():
-            weekday_time_avg_cnt_dict[weekday][hr] = statistics.mean(cnts)
-
-    df_weekday_time_cnt_avg = pd.DataFrame(weekday_time_avg_cnt_dict)
-
+    weekday_time_avg_cnt_dict: dict[int, dict[int, float]] = {}  # weekday time cnt_avg
+    for weekday, dict_time_cnts in weekday_time_cnt_dict.items():
+        if weekday not in weekday_time_avg_cnt_dict:
+            weekday_time_avg_cnt_dict[weekday] = {}
+        for hr, cnts in dict_time_cnts.items():
+            weekday_time_avg_cnt_dict[weekday][hr] = statistics.mean(
+                cnts
+            )  # ここは普通に値なのでhrのキーエラーは発生しない
+    # sort by weekday
+    sorted_weekday_time_avg_cnt_dict = dict(
+        sorted(
+            weekday_time_avg_cnt_dict.items(),
+            key=lambda x: x[0],  # sort by weekday
+        )
+    )
+    # build DataFrame
+    weekday_time_cnt_avg_list: list[list[int | float]] = []
+    for weekday, value in sorted_weekday_time_avg_cnt_dict.items():
+        for time, cnt_avg in value.items():
+            row_data: list[int | float] = [weekday, time, cnt_avg]
+            weekday_time_cnt_avg_list.append(row_data)
+    df_weekday_time_cnt_avg = pd.DataFrame(
+        weekday_time_cnt_avg_list, columns=["weekday", "time", "cnt_avg"]
+    )
     return df_weekday_time_cnt_avg
 
 
@@ -169,7 +188,13 @@ def create_histgram_chart(df: pd.DataFrame, horintal_axis_data: str) -> None:
 
 
 def create_heatmap_chart(df: pd.DataFrame) -> None:
-    fig = px.density_heatmap(df, x=df["weekday"], y=df["hr"], z=df["cnt"])
+    fig = px.density_heatmap(
+        df, x=df["weekday"], y=df["time"], z=df["cnt_avg"], nbinsx=7, nbinsy=24
+    )
+    fig.update_coloraxes(colorbar_title="cnt_avg")
+    fig.update_traces(
+        hovertemplate="曜日: %{x}<br>時間: %{y}<br>cnt平均値: %{z}<extra></extra>"
+    )
     st.plotly_chart(fig, width="stretch")
     return
 
@@ -225,4 +250,4 @@ st.subheader("2.4 時間帯ごとの平均cnt")
 create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
 
 st.subheader("2.5 曜日×時間帯ヒートマップ")
-create_heatmap_chart(hour_data)
+create_heatmap_chart(df_weekday_time_cnt_avg)
