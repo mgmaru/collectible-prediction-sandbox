@@ -68,3 +68,125 @@ data["datetime"] = (
   - 良くない：`data[data["dteday"] >= start_date and data["dteday"] <= end_date]`
   - 正しい：`data[(data["dteday"] >= pd.to_datetime(start_date)) & (data["dteday"] <= pd.to_datetime(end_date))]`
 ---
+### 2026-07-06
+#### やったこと
+- 基本統計量をstreamlitで出力
+- 月毎のcntのグラフを出力
+#### わかったこと
+- `DataFrame`の中の型はそのまま使用した方が良い。無駄な変換はしない。
+- **`DataFrame`の破壊的変更と非破壊的変更の違い**がわからなかった。
+  - 元のデータフレーム：`df`
+  1. 新しい変数に格納する場合：`df2 = df` -> `df2`の変更が`df`に影響する（破壊的）
+  2. 元のデータフレームを`copy`して新しい変数に格納する場合：`df2 = df.copy()` -> `df2`の変更は`df`に影響しない（非破壊的）
+  3. 元のデータフレームの条件を絞って、新しい変数に格納：`df2 = df[条件]` -> `df2`の変更は`df`には影響しない（非破壊的）
+  4. 元のデータフレームの条件を絞ってコピーして新しい変数に格納：`df2 = df[条件].copy()` -> `df2`の変更は`df`には影響しない（非破壊的）
+- **`DataFrame.resample`：indexが日付の場合に、集計を行うのに便利。**
+#### わからなかったこと
+- `DataFrame`の基本的なデータの扱いがまだわかっていない。
+  - データフレームの扱いを学ぶ。
+- グラフの種類ごとにどこで使うべきなのかを学ぶ必要がある。
+  - ヒストグラムはどのような場合に採用するのか？
+  - 折れ線グラフはどのような場合に採用するのか？　など
+---
+### 2026-07-07
+#### やったこと
+- 時間帯ごとの平均cntの計算ロジックおよび棒グラフを追加
+#### わかったこと
+- ヒストグラムと棒グラフの違い
+  1. ヒストグラム：
+    - 見た目：棒同士がくっついている。
+    - 目的：数値の分布（ばらつき）を見る。
+    - データ：同じデータとしてみる。
+    - **横軸：階級（数値範囲）/ 縦軸：度数（データの数）**
+  2. 棒グラフ：
+    - 見た目：棒同士が離れている。
+    - 目的：項目ごとの比較。
+    - データ：1本1本が独立しているデータとしてみる。
+    - **横軸：なんでも。縦軸：数値（の大きさ）**
+- Pythonの`dict[key, list[value]]`にキーを追加するときの注意 -> 追加するキーが`dict`に含まれていない状態で、dictの値に`append`すると`KeyError`となる。 -> 値の`list`が作成されていないため。
+  - **`Go`でいう`nilスライス`に`append`するみたい**なこと。 -> **初期化する必要**があった。
+1. 誤った実装
+```python 
+for _, row in df_for_the_period.iterrows():
+    key = cast(int, row["hr"])
+    value = cast(int, row["cnt"])
+    time_and_cnt_dict[key].append(value) # KeyError
+```
+2. 正しい実装
+```python 
+for _, row in df_for_the_period.iterrows():
+    key = cast(int, row["hr"])
+    value = cast(int, row["cnt"])
+    if key not in time_and_cnt_dict:
+        time_and_cnt_dict[
+            key
+        ] = []  # キーがない場合、空のリストを作ってからappend
+    time_and_cnt_dict[key].append(value)
+```
+---
+### 2026-07-07 / 2026-07-08
+#### やったこと
+- 曜日×時間の平均cntの計算ロジック & ヒートマップ実装
+#### わかったこと
+- `list`の中に`int`や`float`を混在させる時、型は`list[int | float]`のように書く。
+- Pythonでのソート
+  - `sort`：破壊的（元のデータを並び替える）
+  - `sorted`：非破壊的（元のデータを複製して並び替える、元のデータには影響しない）
+- 無名関数：`lambda`
+  - 構文：`lambda 引数 : 返り値`
+#### ロジック構築
+1. `weather`のグループ分けをしてから、平均`cnt`を計算するロジック
+- 自分の実装：
+```python
+weathersit_and_cnt_dict: dict[
+            int, list[int]
+        ] = {}  # キー：weathersit 値：cntのリスト
+        for _, row in df.iterrows():
+            key = cast(int, row["weathersit"])
+            value = cast(int, row["cnt"])
+            if key not in weathersit_and_cnt_dict:
+                weathersit_and_cnt_dict[key] = []
+            weathersit_and_cnt_dict[key].append(value)
+        # 天気ごとの平均cntを計算
+        weathersit_and_cnt_avg_dict: dict[int, list[float]] = {}
+        for key, value in weathersit_and_cnt_dict.items():
+            if key not in weathersit_and_cnt_avg_dict:
+                weathersit_and_cnt_avg_dict[key] = []
+            weathersit_and_cnt_avg_dict[key].append(statistics.mean(value))
+        # convert dict to DataFrame (key to column, value to row)
+        df_weathersit_cnt_avg = pd.DataFrame(
+            weathersit_and_cnt_avg_dict
+        ).T.reset_index()
+        df_weathersit_cnt_avg.columns = ["weathersit", "cnt_avg"]
+    return df_weathersit_cnt_avg
+```
+- 完結な実装：
+```python
+# たったこれだけで、元の15行以上のコードと全く同じ結果になります
+df_weathersit_cnt_avg = df.groupby("weathersit")["cnt"].mean().reset_index(name="cnt_avg")
+```
+- データフレームの`groupby`関数を使用することで完結に実装することができる。
+#### 注意
+- 辞書`dict`を`DataFrame`に変換するとき、値が単一の値だとエラーになる。-> **辞書をデータフレームに変換する時、値は`list`である必要**がある。
+1. エラー
+```python
+import pandas as pd
+
+# NG: 値がすべてスカラー値（単一の数値や文字列）
+data = {"weekday": 0, "time": 9, "cnt_avg": 150.5}
+
+# ここでエラーが発生する！
+df = pd.DataFrame(data) 
+# ValueError: If using all scalar values, you must pass an index
+```
+2. 正しい
+```python
+import pandas as pd
+
+# OK: 値をリストの形にする
+data = {"weekday": [0], "time": [9], "cnt_avg": [150.5]}
+
+# これならエラーなく 1行3列 のDataFrameが作れる
+df = pd.DataFrame(data)
+```
+---
