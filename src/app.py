@@ -329,5 +329,8 @@ with col6:
 st.subheader("2.10 天気別×平均cnt（全期間）")
 create_bar_chart(df_weathersit_cnt_avg, "weathersit", "cnt_avg")
 
-st.subheader("2.11 holiday×平均cnt")
+st.subheader("2.11 holiday×平均cnt（全期間）")
 st.dataframe(df_avg_cnt_holiday)
+
+st.subheader("2.12 registerd×cnt（全期間）")
+create_scatter_chart(day_data, "registered", "cnt")
