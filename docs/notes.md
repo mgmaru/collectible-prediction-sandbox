@@ -190,3 +190,25 @@ data = {"weekday": [0], "time": [9], "cnt_avg": [150.5]}
 df = pd.DataFrame(data)
 ```
 ---
+### 2026-07-09
+#### やったこと
+- holidayと平均cntの関係を調査（表で表示）
+#### わかったこと
+- **`pd.DataFrame.groupby()`で指定したカラムは`index`になるので、`reset_index`でリセットする必要**がある。
+  - `reset_index(name="...")`で、インデックス以外のカラムの名前を変更しながら、指定したカラムのインデックスをリセットすることができる。
+- 自分の実装
+```python
+def calc_cnt_avg_for_holiday(df: pd.DataFrame) -> pd.DataFrame:
+    df_avg_cnt_and_holiday = (
+        df.groupby("holiday")[["cnt"]].mean().reset_index("holiday")
+    )
+    df_avg_cnt_and_holiday.columns = ["holiday", "cnt_avg"]
+    return df_avg_cnt_and_holiday
+```
+- 完結な実装
+```python
+def calc_cnt_avg_for_holiday(df: pd.DataFrame) -> pd.DataFrame:
+    # 1重ブラケットでSeriesとして扱い、name引数で一気に変換する
+    return df.groupby("holiday")["cnt"].mean().reset_index(name="cnt_avg")
+```
+---
