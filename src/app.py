@@ -172,6 +172,14 @@ def calc_cnt_avg_diff_weather_cond(df: pd.DataFrame):
     return df_weathersit_cnt_avg
 
 
+def calc_cnt_avg_for_holiday(df: pd.DataFrame) -> pd.DataFrame:
+    df_avg_cnt_and_holiday = (
+        df.groupby("holiday")[["cnt"]].mean().reset_index("holiday")
+    )
+    df_avg_cnt_and_holiday.columns = ["holiday", "cnt_avg"]
+    return df_avg_cnt_and_holiday
+
+
 def calc_basic_stat(df: pd.DataFrame) -> dict[str, float]:
     basic_statistics: dict[str, float] = {}
     basic_statistics["avg"] = df["cnt"].mean()
@@ -255,6 +263,8 @@ df_weekday_time_cnt_avg = calc_cnt_avg_for_day_of_week_and_time(hour_data)
 
 df_weathersit_cnt_avg = calc_cnt_avg_diff_weather_cond(hour_data)
 
+df_avg_cnt_holiday = calc_cnt_avg_for_holiday(day_data)
+
 # frontend
 st.set_page_config(layout="wide")
 st.header("1. 生データ")
@@ -318,3 +328,6 @@ with col6:
 
 st.subheader("2.10 天気別×平均cnt（全期間）")
 create_bar_chart(df_weathersit_cnt_avg, "weathersit", "cnt_avg")
+
+st.subheader("2.11 holiday×平均cnt")
+st.dataframe(df_avg_cnt_holiday)
