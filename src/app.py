@@ -2,6 +2,7 @@ import statistics
 from pathlib import Path
 from typing import cast
 
+from narwhals._compliant import column
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -55,9 +56,9 @@ def calc_cnt_average_each_month_for_the_period(
         ) + pd.to_timedelta(df_for_the_period["hr"], unit="h")
 
         monthly_avg_cnt = (
-            df_for_the_period.resample(rule="ME", on="datetime")[["cnt"]]
+            df_for_the_period.resample(rule="ME", on="datetime")["cnt"]
             .mean()
-            .reset_index()
+            .reset_index(name= "cnt_avg")
         )  # 平均を算出
         return monthly_avg_cnt
 
@@ -179,6 +180,10 @@ def calc_cnt_avg_for_holiday(df: pd.DataFrame) -> pd.DataFrame:
     df_avg_cnt_and_holiday.columns = ["holiday", "cnt_avg"]
     return df_avg_cnt_and_holiday
 
+def calc_cnt_avg_day_of_week(df: pd.DataFrame):
+    df_group_by_day_of_week = df.groupby("weekday")["cnt"].mean().reset_index(name= "cnt_avg")
+    return df_group_by_day_of_week
+
 
 def calc_basic_stat(df: pd.DataFrame) -> dict[str, float]:
     basic_statistics: dict[str, float] = {}
@@ -288,6 +293,8 @@ df_weathersit_cnt_avg = calc_cnt_avg_diff_weather_cond(hour_data)
 
 df_avg_cnt_holiday = calc_cnt_avg_for_holiday(day_data)
 
+df_cnt_avg_day_of_week = calc_cnt_avg_day_of_week(day_data)
+
 df_group_by_holiday_true = extract_holiday_or_non_holiday(day_data, True)
 df_group_by_holiday_false = extract_holiday_or_non_holiday(day_data, False)
 
@@ -316,28 +323,39 @@ create_line_chart(day_data, "dteday", "cnt")
 
 
 st.header("2. データ理解")
-col3, col4 = st.columns(2)
 
-with col3:
+col_a, col_b = st.columns(2)
+with col_a:
     st.subheader("2.1-1 基本統計量（hour.csv）")
     create_contents(text_basic_stat_hour_data)
 
-    st.subheader("2.2-1 cnt分布（hour.csv）")
-    create_histgram_chart(hour_data, "cnt")
-
-    st.subheader("2.3 時間帯ごとの平均cnt")
-    create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
-
-with col4:
+with col_b:
     st.subheader("2.1-2 基本統計量（day.csv）")
     create_contents(text_basic_stat_day_data)
 
+
+col_c, col_d = st.columns(2)
+with col_c:
+    st.subheader("2.2-1 cnt分布（hour.csv）")
+    create_histgram_chart(hour_data, "cnt")
+
+with col_d:
     st.subheader("2.2-2 cnt分布（day.csv）")
     create_histgram_chart(day_data, "cnt")
 
-    st.subheader("2.4 月毎の平均cnt")
-    create_bar_chart(monthly_cnt_avg, "datetime", "cnt")
+col_e, col_f, col_g = st.columns(3)
 
+with col_e:
+    st.subheader("2.3 時間帯ごとの平均cnt")
+    create_bar_chart(time_and_cnt_avg, "time_zone", "cnt_avg")
+
+with col_f:
+    st.subheader("2.4 月毎の平均cnt")
+    create_bar_chart(monthly_cnt_avg, "datetime", "cnt_avg")
+
+with col_g:
+    st.subheader("2.4 曜日毎の平均cnt")
+    create_bar_chart(df_cnt_avg_day_of_week, "weekday", "cnt_avg")
 
 st.subheader("2.5 曜日×時間帯(全期間)")
 create_heatmap_chart(df_weekday_time_cnt_avg)
@@ -357,6 +375,7 @@ with col6:
 
     st.subheader("2.9 風速×cnt（全期間）")
     create_scatter_chart(day_data, "windspeed", "cnt")
+
 
 st.subheader("2.10 天気別×平均cnt（全期間）")
 create_bar_chart(df_weathersit_cnt_avg, "weathersit", "cnt_avg")
