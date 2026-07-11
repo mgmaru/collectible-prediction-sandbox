@@ -188,6 +188,17 @@ def calc_basic_stat(df: pd.DataFrame) -> dict[str, float]:
     basic_statistics["med"] = df["cnt"].median()
     return basic_statistics
 
+def extract_holiday_or_non_holiday(df: pd.DataFrame, is_holiday: bool) :
+    if is_holiday: # holiday
+        df_group_by_holiday = df.groupby("holiday")[["registered", "casual"]].sum().iloc[1].reset_index()
+        df_group_by_holiday.columns = ["registration_status", "cnt"]
+        return df_group_by_holiday
+    else: # non holiday
+        df_group_by_holiday = df.groupby("holiday")[["registered", "casual"]].sum().iloc[0].reset_index()
+        df_group_by_holiday.columns = ["registration_status", "cnt"]
+        return df_group_by_holiday
+
+
 
 def display_basic_stat(basic_stat: dict[str, float]) -> str:
     basic_stat_text = f"cntの平均：{basic_stat['avg']}<br>cntの最大値：{basic_stat['max']}<br>cntの最小値：{basic_stat['min']}<br>cntの中央値：{basic_stat['med']}"
@@ -241,6 +252,11 @@ def create_scatter_chart(
     fig = px.scatter(df, x=horizontal_axis_data, y=vertical_axis_data)
     st.plotly_chart(fig, width="stretch")
 
+# Note the input data structure
+def create_pie_chart(df: pd.DataFrame, category: str, values: str) -> None:
+    fig = px.pie(df, values=values, names=category) # names:凡例（groupbyのイメージ）　values:データ
+    st.plotly_chart(fig, width="stretch")
+
 
 # 実行
 # データ読み込み
@@ -264,6 +280,9 @@ df_weekday_time_cnt_avg = calc_cnt_avg_for_day_of_week_and_time(hour_data)
 df_weathersit_cnt_avg = calc_cnt_avg_diff_weather_cond(hour_data)
 
 df_avg_cnt_holiday = calc_cnt_avg_for_holiday(day_data)
+
+df_group_by_holiday_true = extract_holiday_or_non_holiday(day_data, True)
+df_group_by_holiday_false = extract_holiday_or_non_holiday(day_data, False)
 
 # frontend
 st.set_page_config(layout="wide")
@@ -334,3 +353,15 @@ st.dataframe(df_avg_cnt_holiday)
 
 st.subheader("2.12 registerd×cnt（全期間）")
 create_scatter_chart(day_data, "registered", "cnt")
+
+st.subheader("2.13 祝日と非祝日の登録者と非登録者の利用割合（全期間）")
+
+col7, col8 = st.columns(2)
+
+with col7:
+    st.subheader("① 祝日の登録者と非登録者の利用割合")
+    create_pie_chart(df_group_by_holiday_true, "registration_status", "cnt")
+
+with col8:
+    st.subheader("② 非祝日の登録者と非登録者の利用割合")
+    create_pie_chart(df_group_by_holiday_false, "registration_status", "cnt" )
