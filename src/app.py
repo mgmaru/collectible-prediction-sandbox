@@ -188,7 +188,7 @@ def calc_basic_stat(df: pd.DataFrame) -> dict[str, float]:
     basic_statistics["med"] = df["cnt"].median()
     return basic_statistics
 
-def extract_holiday_or_non_holiday(df: pd.DataFrame, is_holiday: bool) :
+def extract_holiday_or_non_holiday(df: pd.DataFrame, is_holiday: bool) -> pd.DataFrame:
     if is_holiday: # holiday
         df_group_by_holiday = df.groupby("holiday")[["registered", "casual"]].sum().iloc[1].reset_index()
         df_group_by_holiday.columns = ["registration_status", "cnt"]
@@ -198,7 +198,14 @@ def extract_holiday_or_non_holiday(df: pd.DataFrame, is_holiday: bool) :
         df_group_by_holiday.columns = ["registration_status", "cnt"]
         return df_group_by_holiday
 
+def filter_weekday(df: pd.DataFrame, filter_value: list[int]) -> pd.DataFrame:
+    df_filter_weekday = df[df["weekday"].isin(filter_value)] # フィルターする値のみを抽出
+    return df_filter_weekday
 
+def calc_sum_register_and_casual(df_filter_weekday: pd.DataFrame) -> pd.DataFrame:
+    df_sum_casual_and_register = df_filter_weekday[["casual", "registered"]].sum().reset_index()
+    df_sum_casual_and_register.columns = ["registration_status", "cnt"]
+    return df_sum_casual_and_register
 
 def display_basic_stat(basic_stat: dict[str, float]) -> str:
     basic_stat_text = f"cntの平均：{basic_stat['avg']}<br>cntの最大値：{basic_stat['max']}<br>cntの最小値：{basic_stat['min']}<br>cntの中央値：{basic_stat['med']}"
@@ -284,6 +291,12 @@ df_avg_cnt_holiday = calc_cnt_avg_for_holiday(day_data)
 df_group_by_holiday_true = extract_holiday_or_non_holiday(day_data, True)
 df_group_by_holiday_false = extract_holiday_or_non_holiday(day_data, False)
 
+df_filter_weekdays = filter_weekday(day_data, [1, 2, 3, 4, 5]) # 平日を抽出
+df_filter_non_weekdays = filter_weekday(day_data, [0, 6]) # 休日を抽出
+
+df_sum_casual_register_weekdays = calc_sum_register_and_casual(df_filter_weekdays) # 平日の登録者と非登録者のcntを計算
+df_sum_casual_register__non_weekdays = calc_sum_register_and_casual(df_filter_non_weekdays) # 平日の登録者と非登録者のcntを計算
+
 # frontend
 st.set_page_config(layout="wide")
 st.header("1. 生データ")
@@ -354,14 +367,26 @@ st.dataframe(df_avg_cnt_holiday)
 st.subheader("2.12 registerd×cnt（全期間）")
 create_scatter_chart(day_data, "registered", "cnt")
 
-st.subheader("2.13 祝日と非祝日の登録者と非登録者の利用割合（全期間）")
 
+st.subheader("2.13 祝日と非祝日の登録者と非登録者の利用割合（全期間）")
 col7, col8 = st.columns(2)
 
 with col7:
-    st.subheader("① 祝日の登録者と非登録者の利用割合")
-    create_pie_chart(df_group_by_holiday_true, "registration_status", "cnt")
+    st.subheader("① 非祝日の登録者と非登録者の利用割合")
+    create_pie_chart(df_group_by_holiday_false, "registration_status", "cnt" )
 
 with col8:
-    st.subheader("② 非祝日の登録者と非登録者の利用割合")
-    create_pie_chart(df_group_by_holiday_false, "registration_status", "cnt" )
+    st.subheader("② 祝日の登録者と非登録者の利用割合")
+    create_pie_chart(df_group_by_holiday_true, "registration_status", "cnt")
+
+st.subheader("2.14 平日と休日の登録者と非登録者の利用割合（全期間）")
+
+col9, col10 = st.columns(2)
+# weekday 0:日曜日 6:土曜日　/ other
+with col9:
+    st.subheader("平日における登録者と非登録者の利用割合（全期間）")
+    create_pie_chart(df_sum_casual_register_weekdays, "registration_status", "cnt")
+
+with col10:
+    st.subheader("休日における登録者と非登録者の利用割合（全期間）")
+    create_pie_chart(df_sum_casual_register__non_weekdays, "registration_status", "cnt")
