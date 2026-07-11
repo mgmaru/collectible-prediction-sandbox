@@ -215,6 +215,22 @@ def display_basic_stat(basic_stat: dict[str, float]) -> str:
     basic_stat_text = f"cntの平均：{basic_stat['avg']}<br>cntの最大値：{basic_stat['max']}<br>cntの最小値：{basic_stat['min']}<br>cntの中央値：{basic_stat['med']}"
     return basic_stat_text
 
+def extract_month_and_weathersit_count(df: pd.DataFrame) -> pd.DataFrame:
+    # 期間(Period)を出したあと、その月の1日の「日付型(Timestamp)」に変換する
+    df["year_month"] = df["dteday"].dt.to_period("M").dt.to_timestamp()
+    # {year_month: {1: count, 2:}, {year_month: {1:count, ...} }
+    year_month_and_weathersit_count_dict: dict[pd.Timestamp, dict[int, int]] = {}
+    for _, row in df.iterrows():
+        outer_key = cast(pd.Timestamp, row["year_month"])
+        inner_key = cast(int, row["weathersit"])
+        if outer_key not in year_month_and_weathersit_count_dict:
+            year_month_and_weathersit_count_dict[outer_key] = {}
+        if inner_key not in year_month_and_weathersit_count_dict[outer_key]:
+            year_month_and_weathersit_count_dict[outer_key][inner_key] = 0
+        year_month_and_weathersit_count_dict[outer_key][inner_key] +=1 # countup
+    df_year_month_and_weathersit = pd.DataFrame(year_month_and_weathersit_count_dict).fillna(0).T.reset_index()
+    df_year_month_and_weathersit.columns = ["year_month", "sunny_partly_cloudy_count", "fog_cloudy_count", "light_rain_snow_count", "heavy_rain_blizzard_count"]
+    return df_year_month_and_weathersit
 
 # create chart
 def create_contents(text: str) -> None:
@@ -237,6 +253,11 @@ def create_bar_chart(
 ) -> None:
     fig = px.bar(df, x=horintal_axis_data, y=vertical_axis_data)
     fig.update_xaxes(tickformat="%Y/%m")
+    st.plotly_chart(fig, width="stretch")
+
+def create_stacked_bar_chart(df: pd.DataFrame, horintal_axis_data: str, vertical_axis_data: list[str]) -> None:
+    fig = px.bar(df, x=horintal_axis_data, y=vertical_axis_data)
+    fig.update_layout(barmode='stack')
     st.plotly_chart(fig, width="stretch")
 
 
@@ -302,6 +323,9 @@ df_filter_non_weekdays = filter_weekday(day_data, [0, 6]) # 休日を抽出
 
 df_sum_casual_register_weekdays = calc_sum_register_and_casual(df_filter_weekdays) # 平日の登録者と非登録者のcntを計算
 df_sum_casual_register__non_weekdays = calc_sum_register_and_casual(df_filter_non_weekdays) # 平日の登録者と非登録者のcntを計算
+
+df_year_month_and_weathersit = extract_month_and_weathersit_count(hour_data)
+print(df_year_month_and_weathersit)
 
 # frontend
 st.set_page_config(layout="wide")
@@ -408,3 +432,6 @@ with col9:
 with col10:
     st.subheader("② 休日における登録者と非登録者の利用割合（全期間）")
     create_pie_chart(df_sum_casual_register__non_weekdays, "registration_status", "cnt")
+
+st.subheader("月毎の天気の分布")
+create_stacked_bar_chart(df_year_month_and_weathersit, "year_month", ["sunny_partly_cloudy_count", "fog_cloudy_count", "light_rain_snow_count", "heavy_rain_blizzard_count"])
