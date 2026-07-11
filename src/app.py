@@ -2,7 +2,6 @@ import statistics
 from pathlib import Path
 from typing import cast
 
-from narwhals._compliant import column
 import pandas as pd
 import plotly.express as px
 import streamlit as st
